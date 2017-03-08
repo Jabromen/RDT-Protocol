@@ -16,6 +16,15 @@
 
 #include "definitions.h"
 
+typedef struct message_segments_t
+{
+	// Number of segments
+	int length;
+	// Message segment strings
+	char **segment;
+
+} message_segments_t;
+
 /**
  * Calculates the number of segments required to send a given message.
  *
@@ -129,5 +138,22 @@ void makePacket(char *buffer, const char *srcIP, const int srcPort, const char *
  * @param packet - packet to be corrupted
  */
 void corruptPacket(char *packet);
+
+/**
+ * Divides a message up into segments so it can be sent across the network.
+ * Uses malloc(), so the returned array needs to be freed later.
+ *
+ * @param message - message string that will be segmented
+ *
+ * @return struct containing message segments.
+ */
+message_segments_t *segmentMessage(const char *message);
+
+/**
+ * Frees memory allocated to message segments struct.
+ *
+ * @param segments - struct to be freed
+ */
+void freeMessageSegments(message_segments_t *segments);
 
 #endif // _UDP_PACKET_H

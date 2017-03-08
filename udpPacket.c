@@ -119,3 +119,33 @@ void corruptPacket(char *packet)
 	// Store updated header back in packet
 	memset(packet+44, header, 1);
 }
+
+message_segments_t *segmentMessage(const char *message)
+{
+	message_segments_t *segments = (message_segments_t *) malloc(sizeof(message_segments_t));
+
+	segments->length = numberOfSegments(message);
+
+	segments->segment = (char **) malloc(sizeof(char *) * segments->length);
+
+	int i;
+	for (i = 0; i < segments->length; i++)
+	{
+		segments->segment[i] = (char *) malloc(sizeof(char) * SEGMENT_LENGTH);
+		strncpy(segments->segment[i], message + (i * (SEGMENT_LENGTH - 1)), (SEGMENT_LENGTH- 1));
+		segments->segment[i][SEGMENT_LENGTH] = '\0';
+	}
+
+	return segments;
+}
+
+void freeMessageSegments(message_segments_t *segments)
+{
+	int i;
+	for (i = 0; i < segments->length; i++)
+	{
+		free(segments->segment[i]);
+	}
+	free(segments->segment);
+	free(segments);
+}

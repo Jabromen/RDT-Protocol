@@ -88,5 +88,15 @@ int main(void)
 	
 	printByte(getSegmentHeader(packetBuffer)); printf("\n");
 
+	message_segments_t *segments = segmentMessage(message4);
+
+	int i;
+	for (i = 0; i < segments->length; i++)
+	{
+		printf("%d: %s\n", i+1, segments->segment[i]);
+	}
+
+	freeMessageSegments(segments);
+
 	return 0;
 }
