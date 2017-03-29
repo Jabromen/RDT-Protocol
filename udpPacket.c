@@ -149,3 +149,83 @@ void freeMessageSegments(message_segments_t *segments)
 	free(segments->segment);
 	free(segments);
 }
+
+int getAddress(char *buffer, const char *hostname)
+{
+	struct hostent *hp;
+
+	hp = gethostbyname(hostname);
+
+	if (!hp) {
+		fprintf(stderr, "Could not obtain address of %s\n", hostname);
+		return -1;
+	}
+
+	inet_ntop(AF_INET, hp->h_addr_list[0], buffer, INET_ADDRSTRLEN);
+
+	return 0;
+}
+
+int getOwnAddress(char *buffer)
+{
+	char hostname[32];
+	gethostname(hostname, 32);
+
+	return getAddress(buffer, hostname);
+}
+
+int initializeSocket(int localPort, int sender)
+{
+	int fd;
+
+	if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+	{
+		perror("Cannot create socket");
+		return -1;
+	}
+
+	struct sockaddr_in myaddr;
+	
+	memset((char *) &myaddr, 0, sizeof(myaddr));
+	myaddr.sin_family = AF_INET;
+	myaddr.sin_port = htons(localPort);
+	myaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	// Bind socket
+	if (bind(fd, (struct sockaddr *) &myaddr, sizeof(myaddr)) < 0) {
+		perror("Bind Failed");
+		return -1;
+	}
+
+	if (sender)
+	{
+		struct timeval tv;
+		tv.tv_sec = SEND_TIMEOUT_SEC;
+		tv.tv_usec = SEND_TIMEOUT_USEC;
+
+		if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (char *) &tv, sizeof(struct timeval)) < 0)
+		{
+			printf("setsockopt failed\n");
+			return -1;
+		}
+	}
+
+	return fd;
+}
+
+int sendPacket(int fd, const char *packet, const char *destHost, int destPort)
+{
+	struct sockaddr_in destaddr;
+
+	memset((char *)&destaddr, 0, sizeof(destaddr));
+	destaddr.sin_family = AF_INET;
+	inet_aton(destHost, &destaddr.sin_addr);
+	destaddr.sin_port = htons(destPort);
+
+	if (sendto(fd, packet, PACKET_LENGTH, 0, (struct sockaddr *)&destaddr, sizeof(destaddr)) < 0) {
+		perror("Sendto failed");
+		return -1;
+	}
+
+	return 0;
+}

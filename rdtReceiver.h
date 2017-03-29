@@ -13,6 +13,7 @@
 #define _RDT_RECEIVER_H
 
 #include "definitions.h"
+#include "udpPacket.h"
 
 /**
  * Receives a message from an RDT sender on a specified port.

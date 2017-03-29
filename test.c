@@ -1,8 +1,12 @@
 // Testing
 
 #include <assert.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
 
+#include "definitions.h"
 #include "udpPacket.h"
+#include "rdtSender.h"
 
 void printByte(char byte)
 {
@@ -98,5 +102,12 @@ int main(void)
 
 	freeMessageSegments(segments);
 
+	char hostname[INET_ADDRSTRLEN];
+	getOwnAddress(hostname);
+
+	printf("%s\n", hostname);
+
+	//sendMessage(60000, "127.0.1.1", 60001, "127.0.1.1", 60002, message4);
+	
 	return 0;
 }

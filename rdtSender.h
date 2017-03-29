@@ -13,6 +13,7 @@
 #define _RDT_SENDER_H
 
 #include "definitions.h"
+#include "udpPacket.h"
 
 /**
  * Sends a message to an RDT receiver on a specified host and port using a network simulator
@@ -27,7 +28,7 @@
  *
  * @return 0, if no error; otherwise, a negative number indicating the error
  */
-int sendMessage (int localPort, char* netwhost, int netwPort, char* desthost, int destPort, char* message);
+int sendMessage(int localPort, char* netwhost, int netwPort, char* desthost, int destPort, const char* message);
 
 #endif // _RDT_SENDER_H
 

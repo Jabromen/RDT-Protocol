@@ -156,4 +156,35 @@ message_segments_t *segmentMessage(const char *message);
  */
 void freeMessageSegments(message_segments_t *segments);
 
+/**
+ * Get the IP address of a host in dot format
+ * 
+ * @param buffer - buffer where the IP address string will be stored
+ * @param hostname - host name of machine whose IP address is needed
+ *
+ * @return -1 if failed, 0 if success
+ */
+int getAddress(char *buffer, const char *hostname);
+
+/**
+ * Get the IP address of machine in dot format
+ *
+ * @param buffer - buffer where the IP address string will be stored
+ *
+ * @return -1 if failed, 0 if success
+ */
+int getOwnAddress(char *buffer);
+
+/**
+ * Initializes and binds a UDP socket
+ *
+ * @param localPort - port number of socket being opened
+ * @param sender    - 1 if sender timeout option is needed, 0 otherwise
+ *
+ * @return file descriptor for socket if success, -1 if failure
+ */
+int initializeSocket(int localPort, int sender);
+
+int sendPacket(int fd, const char *packet, const char *destHost, int destPort);
+
 #endif // _UDP_PACKET_H
