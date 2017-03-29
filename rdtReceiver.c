@@ -1,3 +1,11 @@
+/*
+	This is not complete, but it does function correctly with the sender process.
+
+	TO DO:
+		Update code to work with the network process
+		Refactor switch statements to clean up code
+*/
+
 #include "rdtReceiver.h"
 
 char* receiveMessage (int port)

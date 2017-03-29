@@ -1,3 +1,15 @@
+/* 
+	This is not completely finished, but it does function mostly correctly.
+
+	TO DO:
+		Change timeout implementation
+		Refactor switch statements into individual functions to clean up code
+ 
+	As it is, time timeout resets whenever it receives any packet.
+	We want it to continue the same timeout if it receives a corrupt or out of sequence packet.
+
+*/
+
 #include "rdtSender.h"
 
 int sendMessage(int localPort, char* netwhost, int netwPort, char* desthost, int destPort, const char* message)

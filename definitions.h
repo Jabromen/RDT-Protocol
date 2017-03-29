@@ -30,6 +30,12 @@
 // Number of bytes in segments and packets
 #define SEGMENT_LENGTH 10
 #define PACKET_LENGTH  54
+#define TIMEOUT_MS     25
+#define IP_SIZE         4
+#define PORT_SIZE       2
+
+#define MAX_MESSAGE_SIZE 512
+#define BUFFER_SIZE      512
 
 // Timeout values for sender
 #define SEND_TIMEOUT_SEC  1
