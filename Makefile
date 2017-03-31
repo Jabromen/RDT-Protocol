@@ -3,7 +3,7 @@ CC = gcc
 
 all: test sender receiver
 
-test: rdtSender.c udpPacket.c test.c
+test: rdtSender.c udpPacket.c
 	$(CC) $(CFLAGS) rdtSender.c udpPacket.c -lm test.c -o test
 
 sender: rdtSender.c udpPacket.c

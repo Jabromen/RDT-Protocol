@@ -108,6 +108,30 @@ int main(void)
 	printf("%s\n", hostname);
 
 	//sendMessage(60000, "127.0.1.1", 60001, "127.0.1.1", 60002, message4);
+
+	// struct timeval tv;
+	// tv.tv_sec = 5;
+	// tv.tv_usec = 0;
+
+	// printf("%ds, %dus\n", tv.tv_sec, tv.tv_usec);
+
+	// int fd = initializeSocket(60001);
+	// int retval;
+
+	// fd_set fset;
+
+	// FD_ZERO(&fset);
+	// FD_SET(fd, &fset);
+
+	// retval = select(fd+1, &fset, NULL, NULL, &tv);
+
+	// printf("%ds, %dus\n", tv.tv_sec, tv.tv_usec);
+
+	// recv(fd, packetBuffer, PACKET_LENGTH, 0);
+
+	// printf("%ds, %dus\n", tv.tv_sec, tv.tv_usec);
+
+	// printf("retval = %d\n", retval);
 	
 	return 0;
 }

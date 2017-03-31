@@ -183,7 +183,7 @@ int getOwnAddress(char *buffer);
  *
  * @return file descriptor for socket if success, -1 if failure
  */
-int initializeSocket(int localPort, int sender);
+int initializeSocket(int localPort);
 
 int sendPacket(int fd, const char *packet, const char *destHost, int destPort);
 

@@ -1,5 +1,5 @@
 /**
- * This file describes the function(s) to be implemented by an RDT sender.
+ * This file describes the functions to be implemented by an RDT sender.
  *
  * @author Jeffrey Bromen
  * @author Raymond Fleming
@@ -29,6 +29,27 @@
  * @return 0, if no error; otherwise, a negative number indicating the error
  */
 int sendMessage(int localPort, char* netwhost, int netwPort, char* desthost, int destPort, const char* message);
+
+/**
+ * Helper function for sending a packet and waiting until it is acknowledged.
+ *
+ * @param recvBuffer  - buffer that holds received packet
+ * @param packet      - packet being sent
+ * @param fd          - file descriptor for socket being used
+ * @param seqNum      - sequence number of packet being sent
+ * @param sendAddress - IP address of the network or receiver that the packet is being sent to
+ * @param sendPort    - port number of the network or receiver that the packet is being sent to
+ */
+void ackState(char *recvBuffer, const char *packet, int fd, int seqNum, const char *sendAddress, int sendPort);
+
+/**
+ * Sets the parameters of a timeval structure.
+ *
+ * @param tv   - timeval structure being set
+ * @parma sec  - number of seconds
+ * @param usec - number of microseconds
+ */
+void setTimeout(struct timeval *tv, int sec, int usec);
 
 #endif // _RDT_SENDER_H
 

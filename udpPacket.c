@@ -174,7 +174,7 @@ int getOwnAddress(char *buffer)
 	return getAddress(buffer, hostname);
 }
 
-int initializeSocket(int localPort, int sender)
+int initializeSocket(int localPort)
 {
 	int fd;
 
@@ -195,19 +195,6 @@ int initializeSocket(int localPort, int sender)
 	if (bind(fd, (struct sockaddr *) &myaddr, sizeof(myaddr)) < 0) {
 		perror("Bind Failed");
 		return -1;
-	}
-
-	if (sender)
-	{
-		struct timeval tv;
-		tv.tv_sec = SEND_TIMEOUT_SEC;
-		tv.tv_usec = SEND_TIMEOUT_USEC;
-
-		if (setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, (char *) &tv, sizeof(struct timeval)) < 0)
-		{
-			printf("setsockopt failed\n");
-			return -1;
-		}
 	}
 
 	return fd;
