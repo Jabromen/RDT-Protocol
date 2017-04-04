@@ -1,139 +1,88 @@
-
-#include "udpsockets.h"
-#include <time.h>
-#include "definitions.h"
-#include "udpPacket.h"
-#include <math.h>
+#include "rdtNetwork.h"
+#include <pthread.h>
 
 
-typedef struct NetTraffic
-{
-	int SenderPackets;
-    int ReceiverPackets;
-    int DelayedPackets;
-    int CorruptPackets;
-    int DroppedPackets;
-
-} NetTraffic;
-
-typedef struct addressList
-{
-    int numberofSenders;
-    int numberofReceivers;
-    char recIPArray[NUM_HOSTS][IP_SIZE];
-    int recPortArray[NUM_HOSTS];
-    char sendIPArray[NUM_HOSTS][IP_SIZE];
-    int sendPortArray[NUM_HOSTS];
-} addressList;
-
-int PacketDropped(int droppedPercent);
-void RecordDropped(NetTraffic *Traffic);
-int corrupt(int errorPercent);
-void RecordCorrupt(NetTraffic *Traffic);
-int randomInt(int testVal);
-int PacketDelayed(int delayedPercent);
-void RecordDelayed(NetTraffic *Traffic);
-void RecordNetworkTraffic(NetTraffic *Traffic,char *packet,addressList *List);
-void StartDelayThread();
-void SendPacketToReceiver();
-void PrintStats(NetTraffic *Traffic);
-void *DelayThread(void *param);
-int senderMessage(char *packet,addressList *List);
-void newHost(char *packet,addressList *List);
-void addHost(char *toggle,char *buffer,int Port,addressList *List);
-int addressInList(char *buffer,int Port,addressList *List);
-void initializeAddressList(addressList *List);
-
-
-int main (int argc, char** argv) {
+void receiveMessage (int my_port,int lostPercent,int delayedPercent,int errorPercent) {
+    
     char buffer[PACKET_LENGTH];
-    char sourceIP[IP_SIZE]="123";
-    char destinationIP[IP_SIZE]="321";
-    int sourcePort=5;
-    int destinationPort=5;
-    char segment[SEGMENT_LENGTH]="Test";
-    
+    int fd;
+    int i=0;
 
-    
+
+        
+    //Seed the RNG
+    srand(time(NULL));
+
+    //Create needed structs
     struct addressList *List=malloc(sizeof(addressList));
-    
-    // Check if enough arguments
-    if (argc < 5) {
-        printf("ERROR: Not enough arguments. Use format:\n"
-               "\"portNum numberOfHosts\"\n");
-        exit(EXIT_FAILURE);
-    }
-    
-    
+    struct sendBlock *block=malloc(sizeof(sendBlock));
     NetTraffic *Traffic = (NetTraffic *) malloc(sizeof(NetTraffic));
     
-    u_short my_port  = (u_short) atoi(argv[1]);
-    int lostPercent=(int)atoi(argv[2]);
-    int delayedPercent=(int)atoi(argv[3]);
-    int errorPercent=(int)atoi(argv[4]);
-    int err;
-    int fd;
-    
-    fprintf(stderr,"\nMy Port is %d\nlostPercent is %d",(int)my_port,lostPercent);
-    fprintf(stderr,"\ndelayedPercent is %d\nerrorPercent is %d\n",delayedPercent,lostPercent);
 
+    //initialize address list
     initializeAddressList(List);
-    if ((fd = initializeSocket(my_port, 0)) < 0)
+    
+    //initialize socket
+    if ((fd = initializeSocket(my_port)) < 0)
 	{
 		fprintf(stderr, "Socket initialization failed\n");
-		return 1;
+		
 	}
 	
     
-    int i=0;
-    
-    
-    int recvlen;
-    
-    srand(time(NULL));
+
     
 
-        
+    
+
+    //run forever
     while(1){
         
-  //      Print Network Stats every 2 packets
+        //Print Network Stats every 2 packets
         for(i=0;i<2;i++){
-            recvlen = recv(fd, buffer, PACKET_LENGTH, 0);
+            
+            //Receive packet
+            recv(fd, buffer, PACKET_LENGTH, 0);
+            block->fd=fd;
+            strcpy(block->packet,buffer);
+            block->destPort=getDestinationPort(buffer);
+            getDestinationIP(block->destHost,buffer);
             
             
-            
+            //Check if this is a new host
             newHost(buffer,List);
-            fprintf(stderr,"\n\nRecording Traffic\n");
+            
+            //Record sender/receiver data
             RecordNetworkTraffic(Traffic,buffer,List);
     
+            //If packet should be dropped, don't do anything further besides record
             if(!PacketDropped(lostPercent))
             {
+                //Check if corrupt and set corruption bit and record if needed
                 if(corrupt(errorPercent))
                 {
                     corruptPacket(buffer);
                     RecordCorrupt(Traffic);
                 }
+                
+                //Check if packet is delayed and record, then start delay if needed
                 if(PacketDelayed(delayedPercent))
                 {
                     RecordDelayed(Traffic);
-                    StartDelayThread(Traffic);
+                    StartDelayThread(block);
                 }
+                
+                //If not delayed, go ahead and forward packet
                 else{
-                    SendPacketToReceiver();
+                    SendPacketToReceiver(block);
                 }
             }
             else{
                 RecordDropped(Traffic);
             }
-            fprintf(stderr,"\nFirst sender port is %d\nfirst receiver port is %d\nSenders:\n",List->sendPortArray[0],List->recPortArray[0]);
-            for(i=0;i<List->numberofSenders;i++){
-                fprintf(stderr,"IP: %s. Port: %d\n",List->sendIPArray[i],List->sendPortArray[i]);
-            }
-            fprintf(stderr,"\nReceivers:\n");
-            for(i=0;i<List->numberofReceivers;i++){
-                fprintf(stderr,"IP: %s. Port: %d\n",List->recIPArray[i],List->recPortArray[i]);
-            }
         }
+        
+        //Printing stats every 2 packets
         PrintStats(Traffic);
     }
 }
@@ -142,13 +91,14 @@ int main (int argc, char** argv) {
 void initializeAddressList(addressList *List){
     int i=0;
     int j=0;
-//    fprintf(stderr,"\nIn initialize\n");
+
+    //Zero sender/receiver counts
     List->numberofReceivers=0;
     List->numberofSenders=0;
-//    fprintf(stderr,"\nNumhosts = %d\n",List->numberofHosts);
+
+    //Zero all address values
     for(i=0;i<NUM_HOSTS;i++){
         for(j=0;j<IP_SIZE;j++){
-  //          fprintf(stderr,"\nWriting null to [%d][%d]\n",i,j);
             List->recIPArray[i][j]='\0';
             List->sendIPArray[i][j]='\0';
         }
@@ -159,28 +109,26 @@ void initializeAddressList(addressList *List){
 
 void newHost(char *packet,addressList *List){
     
-//    fprintf(stderr,"\n\nin newHost\n\n");
     
     char sendbuffer[BUFFER_SIZE];
     getSourceIP(sendbuffer,packet);
     int sendPort=getSourcePort(packet);
-    
     char recbuffer[BUFFER_SIZE];
     
+    //Get destination address
     getDestinationIP(recbuffer,packet);
+    
+    //Get destination port
     int recPort=getDestinationPort(packet);
     
+    //Check if source is a new address
     int testSource=addressInList(sendbuffer,sendPort,List);
-    int testDest=addressInList(recbuffer,recPort,List);
-    
+
+    //If this is a new source, add both sender and receiver
     if(testSource==0){
         addHost("Sndr",sendbuffer,sendPort,List);
         addHost("Rcvr",recbuffer,recPort,List);
     }
-    
-    
-
-    fprintf(stderr,"\nDone with newHost\n");
 }
 
 int addressInList(char *buffer,int Port,addressList *List)
@@ -188,50 +136,53 @@ int addressInList(char *buffer,int Port,addressList *List)
     int addressFound=0;
     int i=0;
     
-    fprintf(stderr,"\nTesting Sender. numHosts is %d. compare %d to %d\n",List->numberofSenders,Port,List->sendPortArray[0]);
+
+    //Check if passed address is in sender list
     while(List->sendPortArray[i]!=0)
     {
-        fprintf(stderr,"\nTesting port %d to %d\n",List->sendPortArray[i],Port);
+
         if(List->sendPortArray[i]==Port){
-            fprintf(stderr,"\nPorts match testing %s and %s\n",buffer,List->sendIPArray[i]);
+
             if(strcmp(buffer,List->sendIPArray[i])==0){
-                fprintf(stderr,"\nMatch found, sender\n");
+                //If found, mark as sender
                 addressFound=1;
             }
         }
         i++;
     }
+    //Zero index for second loop
     i=0;
-    fprintf(stderr,"\nTesting Receiver. Reccount is %d\n",List->numberofReceivers);
+
+    //Check if passed address is in receiver list
     while(List->sendPortArray[i]!=0)
     {
-        fprintf(stderr,"\nTesting port %d to %d\n",List->recPortArray[i],Port);
+
         if(List->recPortArray[i]==Port){
             if(strcmp(buffer,List->recIPArray[i])==0){
-                fprintf(stderr,"\nMatch found, receiver\n");
+                //If found, mark as receiver
                 addressFound=2;
             }
         }
         i++;
     }
     
-    fprintf(stderr,"\nReturning %d\n",addressFound);
     return addressFound;
     
 }
 
 
 void addHost(char *toggle,char *buffer,int Port,addressList *List){
-//    fprintf(stderr,"\n\n In addNode\n");
-    
-    
+
+    //Check if toggle is sender
     if(strcmp(toggle,"Sndr")==0){
+        //Add sender's address and port to list
         strcpy(List->sendIPArray[List->numberofSenders],buffer);
         List->sendPortArray[List->numberofSenders]=Port;
         List->numberofSenders++;
     }
-    else
+    else //this is a receiver
     {
+        //Add receiver's address and port to list
         strcpy(List->recIPArray[List->numberofReceivers],buffer);
         List->recPortArray[List->numberofReceivers]=Port;
         List->numberofReceivers++;
@@ -240,12 +191,14 @@ void addHost(char *toggle,char *buffer,int Port,addressList *List){
 
 }
 
+
 int PacketDropped(int droppedPercent){
     return randomInt(droppedPercent);
     
 }
 
 void RecordDropped(NetTraffic *Traffic){
+    //Increment dropped counter
     Traffic->DroppedPackets++;
 
 }
@@ -255,12 +208,17 @@ int corrupt(int errorPercent){
 }
 
 void RecordCorrupt(NetTraffic *Traffic){
+    //Increment corrupt counter
     Traffic->CorruptPackets++;
 }
 
 
 int randomInt(int testVal){
+    
+    //Get random value between 0 and 100
     int randVal=rand()%100;
+    
+    //Test if random is less than test value
     if(randVal<=testVal){
         return 1;
     }
@@ -268,69 +226,101 @@ int randomInt(int testVal){
         return 0;
     }
 }
-int PacketDelayed(delayedPercent){
+int PacketDelayed(int delayedPercent){
     return randomInt(delayedPercent);
      
 }
 
 void RecordDelayed(NetTraffic *Traffic){
+    //Increment delayed counter
     Traffic->DelayedPackets++;
 }
 
 
 
 void RecordNetworkTraffic(NetTraffic *Traffic,char *packet,addressList *List){
-    fprintf(stderr,"\n\nIn RecordNetworkTraffic\n\n");
 
-    
-    
+    //If this is a sender packet, increment number of sender packets
     if(senderMessage(packet,List)==1){
         Traffic->SenderPackets++;
     }
-    else{
+    else{ //This is a receiver packet
+        //Increment receiver packets
         Traffic->ReceiverPackets++;
     }
 }
 
-void StartDelayThread(){
+void StartDelayThread(sendBlock *block){
+    
     int err;
     pthread_t delay_thread;
-    if ((err = pthread_create(&delay_thread, NULL, &DelayThread, NULL))) {
+    
+    //Create thread and error test
+    if ((err = pthread_create(&delay_thread, NULL, &DelayThread, block))) {
 		fprintf(stderr, "Can't create Network Thread: [%s]\n", strerror(err));
 		exit(EXIT_FAILURE);
 	}
+	//Avoid zombie children
 	pthread_join(delay_thread, NULL);
     
 }
 
+
 int senderMessage(char *packet,addressList *List){
     char buffer[BUFFER_SIZE];
-    getSourceIP(buffer,packet);
-    int Port=getSourcePort(packet);
-
-    fprintf(stderr,"\nsenderMessage \nSource IP is %s\nPort is %d\n\n",buffer,Port);
     
+    //Extract source address
+    getSourceIP(buffer,packet);
+    
+    //Extract source port
+    int Port=getSourcePort(packet);
+    int returnval=0;
+    
+    //Check if address is in sender list
     if(addressInList(buffer,Port,List)==1){
-        return 1;
+        returnval=1;
     }
+    return returnval;
 }
 
-void SendPacketToReceiver(){
+void SendPacketToReceiver(sendBlock *block){
+    int sckt;
+    if ((sckt = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+	{
+		perror("Cannot create socket");
+		return -1;
+	}
+	
+    char *packet=block->packet;
+    char *dest=block->destHost;
+    int port=block->destPort;
+
     
+
+    //Forward packet
+    sendPacket(sckt,packet,dest,port);
 }
 
 void *DelayThread(void *param) {
+    
+    //Decapsulate parameter
+    struct sendBlock *block=param;
+    
+    //Set random timer between 0 and 10 ms
     struct timespec timer,timer2;
     timer.tv_sec=0;
     timer.tv_nsec=rand()%10000000;
     timer2.tv_sec=0;
     timer2.tv_nsec=0;
     nanosleep(&timer,&timer2);
-
-    SendPacketToReceiver();
+    
+    //After sleep delay, forward packet
+    SendPacketToReceiver(block);
+    return 0;
 }
 
 void PrintStats(NetTraffic *Traffic){
+    //Calculate total number of packets (sender+receiver)
     int TotalPackets=Traffic->SenderPackets+Traffic->ReceiverPackets;
     printf("\nCurrent Stats:\n");
     printf("Total Packets:    %d\n",TotalPackets);

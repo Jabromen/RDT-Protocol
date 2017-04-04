@@ -1,10 +1,10 @@
 CFLAGS = -g -Wall
 CC = gcc
 
-all: test sender receiver
+all: network sender receiver
 
-test: rdtSender.c udpPacket.c
-	$(CC) $(CFLAGS) rdtSender.c udpPacket.c -lm test.c -o test
+network: rdtNetwork.c udpPacket.c
+	$(CC) $(CFLAGS) -pthread rdtNetwork.c udpPacket.c -lm network.c -o network
 
 sender: rdtSender.c udpPacket.c
 	$(CC) $(CFLAGS) rdtSender.c udpPacket.c -lm sender.c -o sender
