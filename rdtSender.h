@@ -53,3 +53,13 @@ void setTimeout(struct timeval *tv, int sec, int usec);
 
 #endif // _RDT_SENDER_H
 
+
+/**
+ * Gets message to send to Receiver from User
+ * 
+ * @param prompt - prompt to be displayed to user
+ * 
+ * */
+void writeUserMessage(char *message);
+
+

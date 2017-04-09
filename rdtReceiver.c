@@ -52,7 +52,7 @@ void receiveMessage (int port)
 
 int recvState(char *message, int fd, int seqNum)
 {
-	struct sockaddr retAddr;
+	struct sockaddr_in retAddr;
 	socklen_t addrlen = sizeof(retAddr);
 
 	char recvContent[SEGMENT_LENGTH] = "";
@@ -67,7 +67,7 @@ int recvState(char *message, int fd, int seqNum)
 	int returnValue = 0;
 
 	// Receive packet and store return address
-	recvfrom(fd, recvBuffer, PACKET_LENGTH, 0, &retAddr, &addrlen);
+	recvfrom(fd, recvBuffer, PACKET_LENGTH, 0, (struct sockaddr *)&retAddr, &addrlen);
 
 	// If corrupt, don't send an ACK
 	if (!isCorrupt(recvBuffer))
@@ -94,8 +94,9 @@ int recvState(char *message, int fd, int seqNum)
 		destPort = getDestinationPort(recvBuffer);
 		// Swap the source and destination address in header when making ACK packet
 		makePacket(packet, destAddress, destPort, srcAddress, srcPort, segment);
+
 		// Send packet to the return address
-		sendto(fd, packet, PACKET_LENGTH, 0, &retAddr, addrlen);
+		sendto(fd, packet, PACKET_LENGTH, 0, (struct sockaddr *)&retAddr, addrlen);
 	}
 	// Return 1 if moving to next state, 0 if repeating current state
 	return returnValue;

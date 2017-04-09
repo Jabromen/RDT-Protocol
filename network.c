@@ -5,7 +5,7 @@ int main(int argc, char **argv)
     //Check for valid number of arguments
     if (argc < 5) {
         printf("ERROR: Not enough arguments. Use format:\n"
-               "\"portNum numberOfHosts\"\n");
+               "\"MyPort LostPercent DelayedPercent ErrorPercent\"\n");
         exit(EXIT_FAILURE);
     }
     

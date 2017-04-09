@@ -134,3 +134,29 @@ void setTimeout(struct timeval *tv, int sec, int usec)
 	tv->tv_sec = sec;
 	tv->tv_usec = usec;
 }
+
+void writeUserMessage(char *message) {
+
+//	char message[MAX_MESSAGE_SIZE] = "";
+	char line[BUFFER_SIZE] = "";
+
+	// Prompt user for message
+	printf("\nEnter the message to send to receiver:\n");
+
+	// Read user message from stdin
+	while (1) {
+		fgets(line, BUFFER_SIZE, stdin);
+		if (!strcmp(line, "\n")) {
+			break;
+		}
+		strcat(message, line);
+		memset(line, 0, strlen(line));
+	}
+
+	// If no message was entered, don't save it.
+	if (!strcmp(message, "\0"))
+		return;
+
+
+
+}

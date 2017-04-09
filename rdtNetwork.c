@@ -1,21 +1,23 @@
 #include "rdtNetwork.h"
 #include <pthread.h>
+int my_port;
 
-
-void receiveMessage (int my_port,int lostPercent,int delayedPercent,int errorPercent) {
+void receiveMessage (int port,int lostPercent,int delayedPercent,int errorPercent) {
     
     char buffer[PACKET_LENGTH];
     int fd;
     int i=0;
+    
 
-
+    my_port=port;
         
     //Seed the RNG
     srand(time(NULL));
 
     //Create needed structs
     struct addressList *List=malloc(sizeof(addressList));
-    struct sendBlock *block=malloc(sizeof(sendBlock));
+    struct socketPacket *fdPacket=malloc(sizeof(socketPacket));
+
     NetTraffic *Traffic = (NetTraffic *) malloc(sizeof(NetTraffic));
     
 
@@ -28,7 +30,6 @@ void receiveMessage (int my_port,int lostPercent,int delayedPercent,int errorPer
 		fprintf(stderr, "Socket initialization failed\n");
 		
 	}
-	
     
 
     
@@ -40,13 +41,13 @@ void receiveMessage (int my_port,int lostPercent,int delayedPercent,int errorPer
         
         //Print Network Stats every 2 packets
         for(i=0;i<2;i++){
-            
+
             //Receive packet
             recv(fd, buffer, PACKET_LENGTH, 0);
-            block->fd=fd;
-            strcpy(block->packet,buffer);
-            block->destPort=getDestinationPort(buffer);
-            getDestinationIP(block->destHost,buffer);
+
+            fdPacket->fd=&fd;
+            fdPacket->packet=buffer;
+
             
             
             //Check if this is a new host
@@ -69,12 +70,13 @@ void receiveMessage (int my_port,int lostPercent,int delayedPercent,int errorPer
                 if(PacketDelayed(delayedPercent))
                 {
                     RecordDelayed(Traffic);
-                    StartDelayThread(block);
+                    StartDelayThread(fdPacket);
                 }
                 
                 //If not delayed, go ahead and forward packet
                 else{
-                    SendPacketToReceiver(block);
+                    SendPacketToReceiver(fdPacket);
+
                 }
             }
             else{
@@ -89,6 +91,7 @@ void receiveMessage (int my_port,int lostPercent,int delayedPercent,int errorPer
 
 
 void initializeAddressList(addressList *List){
+
     int i=0;
     int j=0;
 
@@ -108,7 +111,7 @@ void initializeAddressList(addressList *List){
 }
 
 void newHost(char *packet,addressList *List){
-    
+
     
     char sendbuffer[BUFFER_SIZE];
     getSourceIP(sendbuffer,packet);
@@ -133,6 +136,7 @@ void newHost(char *packet,addressList *List){
 
 int addressInList(char *buffer,int Port,addressList *List)
 {
+
     int addressFound=0;
     int i=0;
     
@@ -250,13 +254,13 @@ void RecordNetworkTraffic(NetTraffic *Traffic,char *packet,addressList *List){
     }
 }
 
-void StartDelayThread(sendBlock *block){
-    
+void StartDelayThread(socketPacket *fdPacket){
+
     int err;
     pthread_t delay_thread;
     
     //Create thread and error test
-    if ((err = pthread_create(&delay_thread, NULL, &DelayThread, block))) {
+    if ((err = pthread_create(&delay_thread, NULL, &DelayThread, fdPacket))) {
 		fprintf(stderr, "Can't create Network Thread: [%s]\n", strerror(err));
 		exit(EXIT_FAILURE);
 	}
@@ -267,6 +271,7 @@ void StartDelayThread(sendBlock *block){
 
 
 int senderMessage(char *packet,addressList *List){
+
     char buffer[BUFFER_SIZE];
     
     //Extract source address
@@ -283,28 +288,23 @@ int senderMessage(char *packet,addressList *List){
     return returnval;
 }
 
-void SendPacketToReceiver(sendBlock *block){
-    int sckt;
-    if ((sckt = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-	{
-		perror("Cannot create socket");
-		return -1;
-	}
-	
-    char *packet=block->packet;
-    char *dest=block->destHost;
-    int port=block->destPort;
-
+void SendPacketToReceiver(socketPacket *fdPacket){
+    int fd=*fdPacket->fd;
+    char dest[BUFFER_SIZE];
+    int port=getDestinationPort(fdPacket->packet);
     
+    getDestinationIP(dest,fdPacket->packet);
+
 
     //Forward packet
-    sendPacket(sckt,packet,dest,port);
+    sendPacket(fd,fdPacket->packet,dest,port);
+
 }
 
 void *DelayThread(void *param) {
-    
+
     //Decapsulate parameter
-    struct sendBlock *block=param;
+    struct socketPacket *fdPacket=param;
     
     //Set random timer between 0 and 10 ms
     struct timespec timer,timer2;
@@ -315,7 +315,7 @@ void *DelayThread(void *param) {
     nanosleep(&timer,&timer2);
     
     //After sleep delay, forward packet
-    SendPacketToReceiver(block);
+    SendPacketToReceiver(fdPacket);
     return 0;
 }
 

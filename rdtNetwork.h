@@ -29,6 +29,11 @@ typedef struct NetTraffic
 
 } NetTraffic;
 
+typedef struct socketPacket{
+    int *fd;
+    char *packet;
+} socketPacket;
+
 //Struct to store address lists of senders and receivers for recording purposes
 typedef struct addressList
 {
@@ -40,14 +45,7 @@ typedef struct addressList
     int sendPortArray[NUM_HOSTS];
 } addressList;
 
-//Struct to pack socket and packet to send into the delay thread
-typedef struct sendBlock
-{
-    char destHost[IP_SIZE];
-    int destPort;
-    char packet[BUFFER_SIZE];
-    int fd;
-} sendBlock;
+
 
 
 /**
@@ -127,11 +125,11 @@ void RecordNetworkTraffic(NetTraffic *Traffic,char *packet,addressList *List);
 /**
  * Start a delay thread for a packet
  * 
- * @param block - packed data structure containing packet and socket pointer 
+ * @param socketPacket - packed data structure containing packet and socket pointers 
  *
  * @return void
  */
-void StartDelayThread(sendBlock *block);
+void StartDelayThread(socketPacket *fdPacket);
 
 /**
  * Print current traffic statistics to console
@@ -145,7 +143,7 @@ void PrintStats(NetTraffic *Traffic);
 /**
  * Delay for a random amount of time, then send packet to receiver
  * 
- * @param param - block struct containing packet and socket pointer
+ * @param param - pointer to a socketPacket - packed data structure containing packet and socket pointers 
  *
  * @return void
  */
@@ -209,7 +207,7 @@ void initializeAddressList(addressList *List);
  *
  * @return void
  */
-void SendPacketToReceiver(sendBlock *block);
+void SendPacketToReceiver(socketPacket *fdPacket);
 
 /**
  * Receives a message from an RDT sender on a specified port.
@@ -221,7 +219,7 @@ void SendPacketToReceiver(sendBlock *block);
  *
  * @return the complete text message received by a sender or NULL if an error occurred
  */
-void receiveMessage (int my_port,int lostPercent,int delayedPercent, int errorPercent);
+void receiveMessage (int port,int lostPercent,int delayedPercent, int errorPercent);
 
 
 #endif // _RDT_RECEIVER_H

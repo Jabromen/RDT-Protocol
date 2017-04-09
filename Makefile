@@ -14,4 +14,4 @@ receiver: rdtReceiver.c udpPacket.c
 
 .PHONY: clean
 clean:
-	rm test sender receiver
+	rm network sender receiver
