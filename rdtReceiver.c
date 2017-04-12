@@ -35,7 +35,7 @@ void receiveMessage (int port)
 				{
 					state = RECV_1;
 					// Print cumulative message
-					printf("%s\n", message);
+					printf("\n%s\n", message);
 				}
 				break;
 
@@ -45,7 +45,7 @@ void receiveMessage (int port)
 				{
 					state = RECV_0;
 					// Print cumulative message
-					printf("%s\n", message);
+					printf("\n%s\n", message);
 				}
 				break;
 		}
