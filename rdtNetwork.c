@@ -1,15 +1,22 @@
+/**
+ * This file includes the implementation of the functions used in the network process.
+ *
+ * @author Jeffrey Bromen
+ * @author Raymond Fleming
+ * @date 4/12/2017
+ * @info Systems and Networks II
+ * @info Project 2
+ *
+ */
+
 #include "rdtNetwork.h"
 #include <pthread.h>
-int my_port;
 
 void receiveMessage (int port,int lostPercent,int delayedPercent,int errorPercent) {
     
     char buffer[PACKET_LENGTH];
     int fd;
     int i=0;
-    
-
-    my_port=port;
         
     //Seed the RNG
     srand(time(NULL));
@@ -18,24 +25,18 @@ void receiveMessage (int port,int lostPercent,int delayedPercent,int errorPercen
     struct addressList *List=malloc(sizeof(addressList));
     struct socketPacket *fdPacket=malloc(sizeof(socketPacket));
 
-    NetTraffic *Traffic = (NetTraffic *) malloc(sizeof(NetTraffic));
+    NetTraffic *Traffic = initializeNetworkTraffic();
     
-
     //initialize address list
     initializeAddressList(List);
     
     //initialize socket
-    if ((fd = initializeSocket(my_port)) < 0)
+    if ((fd = initializeSocket(port)) < 0)
 	{
 		fprintf(stderr, "Socket initialization failed\n");
 		
 	}
     
-
-    
-
-    
-
     //run forever
     while(1){
         
@@ -47,9 +48,7 @@ void receiveMessage (int port,int lostPercent,int delayedPercent,int errorPercen
 
             fdPacket->fd=&fd;
             fdPacket->packet=buffer;
-
-            
-            
+       
             //Check if this is a new host
             newHost(buffer,List);
             
@@ -89,6 +88,17 @@ void receiveMessage (int port,int lostPercent,int delayedPercent,int errorPercen
     }
 }
 
+NetTraffic *initializeNetworkTraffic() {
+    NetTraffic *Traffic = (NetTraffic *) malloc(sizeof(NetTraffic));
+
+    Traffic->SenderPackets = 0;
+    Traffic->ReceiverPackets = 0;
+    Traffic->DelayedPackets = 0;
+    Traffic->CorruptPackets = 0;
+    Traffic->DroppedPackets = 0;
+
+    return Traffic;
+}
 
 void initializeAddressList(addressList *List){
 
@@ -111,7 +121,6 @@ void initializeAddressList(addressList *List){
 }
 
 void newHost(char *packet,addressList *List){
-
     
     char sendbuffer[BUFFER_SIZE];
     getSourceIP(sendbuffer,packet);
@@ -174,7 +183,6 @@ int addressInList(char *buffer,int Port,addressList *List)
     
 }
 
-
 void addHost(char *toggle,char *buffer,int Port,addressList *List){
 
     //Check if toggle is sender
@@ -195,16 +203,13 @@ void addHost(char *toggle,char *buffer,int Port,addressList *List){
 
 }
 
-
 int PacketDropped(int droppedPercent){
-    return randomInt(droppedPercent);
-    
+    return randomInt(droppedPercent);    
 }
 
 void RecordDropped(NetTraffic *Traffic){
     //Increment dropped counter
     Traffic->DroppedPackets++;
-
 }
 
 int corrupt(int errorPercent){
@@ -217,8 +222,7 @@ void RecordCorrupt(NetTraffic *Traffic){
 }
 
 
-int randomInt(int testVal){
-    
+int randomInt(int testVal){   
     //Get random value between 0 and 100
     int randVal=rand()%100;
     
@@ -230,6 +234,7 @@ int randomInt(int testVal){
         return 0;
     }
 }
+
 int PacketDelayed(int delayedPercent){
     return randomInt(delayedPercent);
      
@@ -239,8 +244,6 @@ void RecordDelayed(NetTraffic *Traffic){
     //Increment delayed counter
     Traffic->DelayedPackets++;
 }
-
-
 
 void RecordNetworkTraffic(NetTraffic *Traffic,char *packet,addressList *List){
 
@@ -262,13 +265,8 @@ void StartDelayThread(socketPacket *fdPacket){
     //Create thread and error test
     if ((err = pthread_create(&delay_thread, NULL, &DelayThread, fdPacket))) {
 		fprintf(stderr, "Can't create Network Thread: [%s]\n", strerror(err));
-		exit(EXIT_FAILURE);
-	}
-	//Avoid zombie children
-	pthread_join(delay_thread, NULL);
-    
+	}  
 }
-
 
 int senderMessage(char *packet,addressList *List){
 
@@ -298,7 +296,6 @@ void SendPacketToReceiver(socketPacket *fdPacket){
 
     //Forward packet
     sendPacket(fd,fdPacket->packet,dest,port);
-
 }
 
 void *DelayThread(void *param) {
@@ -308,8 +305,10 @@ void *DelayThread(void *param) {
     
     //Set random timer between 0 and 10 ms
     struct timespec timer,timer2;
-    timer.tv_sec=0;
-    timer.tv_nsec=rand()%10000000;
+    // timer.tv_sec=0;
+    timer.tv_sec = NETWORK_DELAY_SCALE * SEND_TIMEOUT_SEC;
+    // timer.tv_nsec=rand()%10000000;
+    timer.tv_nsec = NETWORK_DELAY_SCALE * SEND_TIMEOUT_USEC * 1000;
     timer2.tv_sec=0;
     timer2.tv_nsec=0;
     nanosleep(&timer,&timer2);

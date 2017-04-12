@@ -45,8 +45,12 @@ typedef struct addressList
     int sendPortArray[NUM_HOSTS];
 } addressList;
 
-
-
+/**
+ * Allocates memory for and initializes NetTraffic struct.
+ *
+ * @return: pointer to NetTraffic struct
+ */
+NetTraffic *initializeNetworkTraffic();
 
 /**
  * Determine if packet should be dropped

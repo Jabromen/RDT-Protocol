@@ -34,6 +34,8 @@ void receiveMessage (int port)
 				if (recvState(message, fd, 0))
 				{
 					state = RECV_1;
+					// Print cumulative message
+					printf("%s\n", message);
 				}
 				break;
 
@@ -42,11 +44,11 @@ void receiveMessage (int port)
 				if (recvState(message, fd, 1))
 				{
 					state = RECV_0;
+					// Print cumulative message
+					printf("%s\n", message);
 				}
 				break;
 		}
-		// Print cumulative message
-		printf("%s\n", message);
 	}
 }
 

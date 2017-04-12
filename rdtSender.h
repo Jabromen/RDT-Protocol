@@ -60,6 +60,6 @@ void setTimeout(struct timeval *tv, int sec, int usec);
  * @param prompt - prompt to be displayed to user
  * 
  * */
-void writeUserMessage(char *message);
+void getUserMessage(char *message);
 
 

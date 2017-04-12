@@ -135,28 +135,27 @@ void setTimeout(struct timeval *tv, int sec, int usec)
 	tv->tv_usec = usec;
 }
 
-void writeUserMessage(char *message) {
+void getUserMessage(char *message) {
 
-//	char message[MAX_MESSAGE_SIZE] = "";
 	char line[BUFFER_SIZE] = "";
 
+	// Clear message buffer
+	memset(message, 0, MAX_MESSAGE_SIZE);
+
 	// Prompt user for message
-	printf("\nEnter the message to send to receiver:\n");
+	printf("\nEnter message to send to receiver (hit enter twice to confirm message):\n");
 
 	// Read user message from stdin
 	while (1) {
+		// Read line from stdin
 		fgets(line, BUFFER_SIZE, stdin);
-		if (!strcmp(line, "\n")) {
+		// Break if enter key is hit twice after a message was entered
+		if (!strcmp(line, "\n") && strcmp(message, "\0")) {
 			break;
 		}
+		// Append line to end of message
 		strcat(message, line);
+		// Clear line buffer
 		memset(line, 0, strlen(line));
 	}
-
-	// If no message was entered, don't save it.
-	if (!strcmp(message, "\0"))
-		return;
-
-
-
 }
