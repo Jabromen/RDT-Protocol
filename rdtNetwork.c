@@ -315,7 +315,8 @@ void *DelayThread(void *param) {
     
     //After sleep delay, forward packet
     SendPacketToReceiver(fdPacket);
-    return 0;
+
+    pthread_exit(NULL);
 }
 
 void PrintStats(NetTraffic *Traffic){
