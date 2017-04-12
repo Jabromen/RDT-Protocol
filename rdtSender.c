@@ -49,12 +49,8 @@ int sendMessage(int localPort, char* netwhost, int netwPort, char* desthost, int
 				makeSegment(segment, 0, segments->segment[i]);
 				makePacket(packet, ownAddress, localPort, destAddress, destPort, segment);
 
-				state = ACK_0;
-				break;
-
-			case ACK_0:
 				// Send packet with sequence 0 and wait for ACK with sequence 0
-				ackState(recvBuffer, packet, fd, 0, netwAddress, netwPort);
+				sendState(recvBuffer, packet, fd, 0, netwAddress, netwPort);
 
 				state = SEND_1;
 				i++;
@@ -65,12 +61,8 @@ int sendMessage(int localPort, char* netwhost, int netwPort, char* desthost, int
 				makeSegment(segment, 1, segments->segment[i]);
 				makePacket(packet, ownAddress, localPort, destAddress, destPort, segment);
 
-				state = ACK_1;
-				break;
-
-			case ACK_1:
 				// Send packet with sequence 1 and wait for ACK with sequence 1
-				ackState(recvBuffer, packet, fd, 1, netwAddress, netwPort);
+				sendState(recvBuffer, packet, fd, 1, netwAddress, netwPort);
 
 				state = SEND_0;
 				i++;
@@ -83,7 +75,7 @@ int sendMessage(int localPort, char* netwhost, int netwPort, char* desthost, int
 	return 0;
 }
 
-void ackState(char *recvBuffer, const char *packet, int fd, int seqNum, const char *sendAddress, int sendPort)
+void sendState(char *recvBuffer, const char *packet, int fd, int seqNum, const char *sendAddress, int sendPort)
 {
 	int selectval = 0;
 	fd_set fdset;

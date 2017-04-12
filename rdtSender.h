@@ -40,7 +40,7 @@ int sendMessage(int localPort, char* netwhost, int netwPort, char* desthost, int
  * @param sendAddress - IP address of the network or receiver that the packet is being sent to
  * @param sendPort    - port number of the network or receiver that the packet is being sent to
  */
-void ackState(char *recvBuffer, const char *packet, int fd, int seqNum, const char *sendAddress, int sendPort);
+void sendState(char *recvBuffer, const char *packet, int fd, int seqNum, const char *sendAddress, int sendPort);
 
 /**
  * Sets the parameters of a timeval structure.
@@ -51,15 +51,15 @@ void ackState(char *recvBuffer, const char *packet, int fd, int seqNum, const ch
  */
 void setTimeout(struct timeval *tv, int sec, int usec);
 
-#endif // _RDT_SENDER_H
-
-
 /**
  * Gets message to send to Receiver from User
  * 
- * @param prompt - prompt to be displayed to user
- * 
- * */
+ * @param message - buffer where user message will be stored
+ */
 void getUserMessage(char *message);
+
+#endif // _RDT_SENDER_H
+
+
 
 

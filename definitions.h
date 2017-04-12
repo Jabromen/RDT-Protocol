@@ -49,9 +49,7 @@
 
 // Switch statement values for sender
 #define SEND_0 1
-#define ACK_0  2
-#define SEND_1 3
-#define ACK_1  4
+#define SEND_1 2
 
 // Switch statement values for receiver
 #define RECV_0 1
