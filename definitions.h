@@ -31,10 +31,8 @@
 #define SEGMENT_LENGTH 10
 #define PACKET_LENGTH  54
 
-// Constants used in recording network traffic
-#define IP_SIZE         4
-#define PORT_SIZE       2
-#define NUM_HOSTS      20
+// Maximum number of hosts that can be recorded
+#define NUM_HOSTS 20
 
 // Number of bytes in message buffers
 #define MAX_MESSAGE_SIZE 512
@@ -42,10 +40,10 @@
 
 // Timeout values for sender
 #define SEND_TIMEOUT_SEC  0
-#define SEND_TIMEOUT_USEC 50000
+#define SEND_TIMEOUT_USEC 100000
 
 // Scaling for network delay vs sender timout
-#define NETWORK_DELAY_SCALE 5
+#define NETWORK_DELAY_SCALE 1.75
 
 // Switch statement values for sender
 #define SEND_0 1

@@ -39,9 +39,9 @@ typedef struct addressList
 {
     int numberofSenders;
     int numberofReceivers;
-    char recIPArray[NUM_HOSTS][IP_SIZE];
+    char recIPArray[NUM_HOSTS][INET_ADDRSTRLEN];
     int recPortArray[NUM_HOSTS];
-    char sendIPArray[NUM_HOSTS][IP_SIZE];
+    char sendIPArray[NUM_HOSTS][INET_ADDRSTRLEN];
     int sendPortArray[NUM_HOSTS];
 } addressList;
 

@@ -103,7 +103,6 @@ NetTraffic *initializeNetworkTraffic() {
 void initializeAddressList(addressList *List){
 
     int i=0;
-    int j=0;
 
     //Zero sender/receiver counts
     List->numberofReceivers=0;
@@ -111,11 +110,10 @@ void initializeAddressList(addressList *List){
 
     //Zero all address values
     for(i=0;i<NUM_HOSTS;i++){
-        for(j=0;j<IP_SIZE;j++){
-            List->recIPArray[i][j]='\0';
-            List->sendIPArray[i][j]='\0';
-        }
-        List->recPortArray[i]=0;
+        memset(List->recIPArray[i], 0, INET_ADDRSTRLEN);
+        memset(List->sendIPArray[i], 0, INET_ADDRSTRLEN);
+        List->sendPortArray[i] = 0;
+        List->recPortArray[i] = 0;
     }
     
 }
@@ -123,14 +121,18 @@ void initializeAddressList(addressList *List){
 void newHost(char *packet,addressList *List){
     
     char sendbuffer[BUFFER_SIZE];
-    getSourceIP(sendbuffer,packet);
-    int sendPort=getSourcePort(packet);
     char recbuffer[BUFFER_SIZE];
+
+    // Get source address
+    getSourceIP(sendbuffer,packet);
     
-    //Get destination address
+    // Get source port
+    int sendPort=getSourcePort(packet);
+
+    // Get destination address
     getDestinationIP(recbuffer,packet);
     
-    //Get destination port
+    // Get destination port
     int recPort=getDestinationPort(packet);
     
     //Check if source is a new address
@@ -143,50 +145,36 @@ void newHost(char *packet,addressList *List){
     }
 }
 
-int addressInList(char *buffer,int Port,addressList *List)
-{
-
-    int addressFound=0;
-    int i=0;
+int addressInList(char *buffer,int Port,addressList *List) {
+    int i = 0;
     
-
     //Check if passed address is in sender list
-    while(List->sendPortArray[i]!=0)
-    {
-
-        if(List->sendPortArray[i]==Port){
-
-            if(strcmp(buffer,List->sendIPArray[i])==0){
-                //If found, mark as sender
-                addressFound=1;
-            }
+    while (i < List->numberofSenders) {
+        if (!strcmp(buffer,List->sendIPArray[i]) && List->sendPortArray[i] == Port) {
+            //If found, mark as sender
+            return 1;
         }
         i++;
     }
     //Zero index for second loop
-    i=0;
+    i = 0;
 
     //Check if passed address is in receiver list
-    while(List->sendPortArray[i]!=0)
-    {
-
-        if(List->recPortArray[i]==Port){
-            if(strcmp(buffer,List->recIPArray[i])==0){
-                //If found, mark as receiver
-                addressFound=2;
-            }
+    while (i < List->numberofReceivers) {
+        if (!strcmp(buffer,List->recIPArray[i]) && List->recPortArray[i] == Port){
+            //If found, mark as receiver
+            return 2;
         }
         i++;
     }
     
-    return addressFound;
-    
+    return 0;
 }
 
 void addHost(char *toggle,char *buffer,int Port,addressList *List){
 
     //Check if toggle is sender
-    if(strcmp(toggle,"Sndr")==0){
+    if(!strcmp(toggle,"Sndr")){
         //Add sender's address and port to list
         strcpy(List->sendIPArray[List->numberofSenders],buffer);
         List->sendPortArray[List->numberofSenders]=Port;
@@ -247,12 +235,12 @@ void RecordDelayed(NetTraffic *Traffic){
 
 void RecordNetworkTraffic(NetTraffic *Traffic,char *packet,addressList *List){
 
-    //If this is a sender packet, increment number of sender packets
-    if(senderMessage(packet,List)==1){
+    // If this is a sender packet
+    if(senderMessage(packet,List)) {
         Traffic->SenderPackets++;
     }
-    else{ //This is a receiver packet
-        //Increment receiver packets
+    // If this is a receiver packet
+    else {
         Traffic->ReceiverPackets++;
     }
 }
@@ -264,7 +252,7 @@ void StartDelayThread(socketPacket *fdPacket){
     
     //Create thread and error test
     if ((err = pthread_create(&delay_thread, NULL, &DelayThread, fdPacket))) {
-		fprintf(stderr, "Can't create Network Thread: [%s]\n", strerror(err));
+		fprintf(stderr, "Can't create Delay Thread: [%s]\n", strerror(err));
 	}  
 }
 
@@ -277,13 +265,9 @@ int senderMessage(char *packet,addressList *List){
     
     //Extract source port
     int Port=getSourcePort(packet);
-    int returnval=0;
     
     //Check if address is in sender list
-    if(addressInList(buffer,Port,List)==1){
-        returnval=1;
-    }
-    return returnval;
+    return addressInList(buffer,Port,List) == 1 ? 1 : 0;
 }
 
 void SendPacketToReceiver(socketPacket *fdPacket){
@@ -302,16 +286,9 @@ void *DelayThread(void *param) {
 
     //Decapsulate parameter
     struct socketPacket *fdPacket=param;
-    
-    //Set random timer between 0 and 10 ms
-    struct timespec timer,timer2;
-    // timer.tv_sec=0;
-    timer.tv_sec = NETWORK_DELAY_SCALE * SEND_TIMEOUT_SEC;
-    // timer.tv_nsec=rand()%10000000;
-    timer.tv_nsec = NETWORK_DELAY_SCALE * SEND_TIMEOUT_USEC * 1000;
-    timer2.tv_sec=0;
-    timer2.tv_nsec=0;
-    nanosleep(&timer,&timer2);
+
+    // Sleep to delay packet
+    usleep(NETWORK_DELAY_SCALE * (SEND_TIMEOUT_SEC * 10e6 + SEND_TIMEOUT_USEC));
     
     //After sleep delay, forward packet
     SendPacketToReceiver(fdPacket);
